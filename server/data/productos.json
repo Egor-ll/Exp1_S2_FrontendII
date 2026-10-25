@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "nombre": "Arroz",
+    "categoria": "Abarrotes",
+    "stock": 45
+  },
+  {
+    "id": 2,
+    "nombre": "Leche",
+    "categoria": "Lácteos",
+    "stock": 28
+  },
+  {
+    "id": 3,
+    "nombre": "Pan",
+    "categoria": "Panadería",
+    "stock": 12
+  },
+  {
+    "id": 4,
+    "nombre": "Aceite",
+    "categoria": "Abarrotes",
+    "stock": 6
+  },
+  {
+    "id": 5,
+    "nombre": "Papa",
+    "categoria": "Frutas y verduras",
+    "stock": 5
+  }
+]
