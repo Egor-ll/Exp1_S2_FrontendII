@@ -1,301 +1,102 @@
 
-import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useInventario } from '../context/useInventario.js';
 
 function Home() {
-    const [productos, setProductos] = useState([]);
-    const [nombre, setNombre] = useState('');
-    const [categoria, setCategoria] = useState('Abarrotes');
-    const [stock, setStock] = useState('1');
-    const [error, setError] = useState('');
-    const [cargando, setCargando] = useState(true);
-    const [guardando, setGuardando] = useState(false);
-
-    async function cargarProductos() {
-        try {
-            setCargando(true);
-
-            const respuesta = await fetch('/api/productos');
-
-            if (!respuesta.ok) {
-                throw new Error('No se pudo consultar el inventario.');
-            }
-
-            const datos = await respuesta.json();
-            setProductos(datos);
-            setError('');
-        } catch (err) {
-            setError(err.message || 'Error al cargar el inventario.');
-        } finally {
-            setCargando(false);
-        }
-    }
-
-
-    useEffect(() => {
-        let activo = true;
-
-        async function obtenerProductos() {
-            try {
-                const respuesta = await fetch('/api/productos');
-
-                if (!respuesta.ok) {
-                    throw new Error('No se pudo consultar el inventario.');
-                }
-
-                const datos = await respuesta.json();
-
-                if (activo) {
-                    setProductos(datos);
-                    setError('');
-                }
-            } catch (err) {
-                if (activo) {
-                    setError(err.message || 'Error al cargar el inventario.');
-                }
-            } finally {
-                if (activo) {
-                    setCargando(false);
-                }
-            }
-        }
-
-        obtenerProductos();
-
-        return () => {
-            activo = false;
-        };
-    }, []);
+    const {
+        productos,
+        cargando,
+        error,
+    } = useInventario();
 
     const unidadesTotales = productos.reduce(
-        (total, producto) => total + producto.stock,
+        (total, producto) => total + Number(producto.stock || 0),
         0
     );
 
     const productosStockBajo = productos.filter(
-        (producto) => producto.stock < 10
+        producto => Number(producto.stock) < 10
     ).length;
 
-    async function agregarProducto(event) {
-        event.preventDefault();
-        setError('');
-
-        const nombreLimpio = nombre.trim();
-        const cantidad = Number(stock);
-
-        if (!nombreLimpio) {
-            setError('Ingresa el nombre del producto.');
-            return;
-        }
-
-        if (!Number.isInteger(cantidad) || cantidad < 0) {
-            setError('El stock debe ser un número entero igual o mayor que cero.');
-            return;
-        }
-
-        try {
-            setGuardando(true);
-
-            const respuesta = await fetch('/api/productos', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    nombre: nombreLimpio,
-                    categoria,
-                    stock: cantidad,
-                }),
-            });
-
-            const resultado = await respuesta.json().catch(() => ({}));
-
-            if (!respuesta.ok) {
-                throw new Error(resultado.mensaje || 'No se pudo guardar el producto.');
-            }
-
-            setNombre('');
-            setCategoria('Abarrotes');
-            setStock('1');
-
-            await cargarProductos();
-        } catch (err) {
-            setError(err.message || 'Error al guardar el producto.');
-        } finally {
-            setGuardando(false);
-        }
-    }
-
-    async function eliminarProducto(id) {
-        if (!window.confirm('¿Deseas eliminar este producto del inventario?')) {
-            return;
-        }
-
-        setError('');
-
-        try {
-            const respuesta = await fetch(`/api/productos/${id}`, {
-                method: 'DELETE',
-            });
-
-            if (!respuesta.ok) {
-                const resultado = await respuesta.json().catch(() => ({}));
-                throw new Error(resultado.mensaje || 'No se pudo eliminar el producto.');
-            }
-
-            await cargarProductos();
-        } catch (err) {
-            setError(err.message || 'Error al eliminar el producto.');
-        }
-    }
+    const tarjetas = [
+        {
+            titulo: 'Productos registrados',
+            valor: productos.length,
+            descripcion: 'Artículos disponibles en el sistema',
+        },
+        {
+            titulo: 'Unidades en inventario',
+            valor: unidadesTotales,
+            descripcion: 'Total de unidades registradas',
+        },
+    ];
 
     return (
-        <main className="contenido">
-            <section className="bienvenida">
-                <p className="etiqueta">GESTIÓN DE INVENTARIO</p>
-                <h1>Control de inventario</h1>
-                <p>
-                    Administra los productos y consulta las existencias del supermercado.
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">
+
+            <section className="mb-8 rounded-2xl bg-[#176b45] p-6 text-white shadow-lg sm:p-8">
+                <p className="mb-3 text-xs font-extrabold tracking-[1.5px] text-[#b9e7ca]">
+                    GESTIÓN DE INVENTARIO
+                </p>
+
+                <h1 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">
+                    Control de inventario
+                </h1>
+
+                <p className="max-w-3xl leading-7 text-[#e0f0e5]">
+                    Administra los productos y consulta las existencias
+                    del supermercado.
                 </p>
             </section>
 
-            <section className="resumen">
-                <article className="tarjeta">
-                    <span>Productos registrados</span>
-                    <strong>{productos.length}</strong>
-                </article>
+            {error && (
+                <p
+                    className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700"
+                    role="alert"
+                >
+                    {error}
+                </p>
+            )}
 
-                <article className="tarjeta">
-                    <span>Unidades en inventario</span>
-                    <strong>{unidadesTotales}</strong>
-                </article>
+            <section className="grid grid-cols-1 gap-5 md:grid-cols-3">
 
-                <article className="tarjeta">
-                    <span>Productos con stock bajo</span>
-                    <strong>{productosStockBajo}</strong>
-                </article>
-            </section>
-
-            <section className="panel">
-                <h2>Agregar producto</h2>
-
-                <form className="formulario-producto" onSubmit={agregarProducto}>
-                    <div className="campo">
-                        <label htmlFor="nombre">Nombre del producto</label>
-                        <input
-                            id="nombre"
-                            type="text"
-                            placeholder="Ej. Azúcar"
-                            value={nombre}
-                            onChange={(event) => setNombre(event.target.value)}
-                            maxLength={80}
-                            required
-                        />
-                    </div>
-
-                    <div className="campo">
-                        <label htmlFor="categoria">Categoría</label>
-                        <select
-                            id="categoria"
-                            value={categoria}
-                            onChange={(event) => setCategoria(event.target.value)}
-                        >
-                            <option>Abarrotes</option>
-                            <option>Lácteos</option>
-                            <option>Panadería</option>
-                            <option>Frutas y verduras</option>
-                            <option>Bebidas</option>
-                            <option>Limpieza</option>
-                            <option>Congelados</option>
-                            <option>Otros</option>
-                        </select>
-                    </div>
-
-                    <div className="campo">
-                        <label htmlFor="stock">Stock inicial</label>
-                        <input
-                            id="stock"
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={stock}
-                            onChange={(event) => setStock(event.target.value)}
-                            required
-                        />
-                    </div>
-
-                    <button
-                        className="boton-agregar"
-                        type="submit"
-                        disabled={guardando}
+                {tarjetas.map((tarjeta) => (
+                    <article
+                        key={tarjeta.titulo}
+                        className="flex flex-col gap-3 rounded-2xl border border-[#e3eae4] bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md sm:p-8"
                     >
-                        {guardando ? 'Guardando...' : '+ Agregar producto'}
-                    </button>
-                </form>
+                        <span className="text-sm font-semibold text-[#718076]">
+                            {tarjeta.titulo}
+                        </span>
 
-                {error && (
-                    <p className="mensaje-error" role="alert">
-                        {error}
-                    </p>
-                )}
-            </section>
+                        <strong className="text-4xl font-extrabold text-[#176b45]">
+                            {cargando ? '...' : tarjeta.valor}
+                        </strong>
 
-            <section className="panel">
-                <h2>Inventario de productos</h2>
+                        <p className="text-sm text-[#64736a]">
+                            {tarjeta.descripcion}
+                        </p>
+                    </article>
+                ))}
 
-                {cargando ? (
-                    <p>Cargando inventario...</p>
-                ) : (
-                    <div className="tabla-contenedor">
-                        <table>
-                            <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th>Categoría</th>
-                                <th>Stock</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                            </thead>
+                <Link
+                    to="/inventario?filtro=stock-bajo"
+                    className="flex flex-col gap-3 rounded-2xl border border-[#e3eae4] bg-white p-6 text-left no-underline shadow-sm transition duration-200 hover:-translate-y-1 hover:border-[#176b45] hover:shadow-md sm:p-8"
+                    aria-label="Ver productos con stock bajo en el inventario"
+                >
+                    <span className="text-sm font-semibold text-[#718076]">
+                        Productos con stock bajo
+                    </span>
 
-                            <tbody>
-                            {productos.map((producto) => (
-                                <tr key={producto.id}>
-                                    <td>{producto.nombre}</td>
-                                    <td>{producto.categoria}</td>
-                                    <td>{producto.stock}</td>
-                                    <td>
-                      <span
-                          className={
-                              producto.stock < 10
-                                  ? 'estado bajo'
-                                  : 'estado normal'
-                          }
-                      >
-                        {producto.stock < 10 ? 'Stock bajo' : 'Disponible'}
-                      </span>
-                                    </td>
-                                    <td>
-                                        <button
-                                            className="boton-eliminar"
-                                            type="button"
-                                            onClick={() => eliminarProducto(producto.id)}
-                                            aria-label={`Eliminar ${producto.nombre}`}
-                                        >
-                                            Eliminar
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                    <strong className="text-4xl font-extrabold text-[#a75b12]">
+                        {cargando ? '...' : productosStockBajo}
+                    </strong>
 
-                            {productos.length === 0 && (
-                                <tr>
-                                    <td colSpan="5">No hay productos registrados.</td>
-                                </tr>
-                            )}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                    <span className="text-sm font-semibold text-[#176b45]">
+                        Ver artículos que necesitan reposición →
+                    </span>
+                </Link>
+
             </section>
         </main>
     );

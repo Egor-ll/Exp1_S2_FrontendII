@@ -31,6 +31,7 @@ async function guardarProductos(productos) {
     );
 }
 
+// Consultar inventario
 app.get('/api/productos', async (req, res) => {
     try {
         res.json(await leerProductos());
@@ -40,27 +41,26 @@ app.get('/api/productos', async (req, res) => {
     }
 });
 
+// Registrar artículo
 app.post('/api/productos', async (req, res) => {
     try {
-        const { nombre, categoria, stock } = req.body;
+        const { nombre, marca, tipo, stock } = req.body;
 
         if (
-            typeof nombre !== 'string' ||
-            !nombre.trim() ||
-            typeof categoria !== 'string' ||
-            !categoria.trim() ||
-            !Number.isInteger(stock) ||
-            stock < 0
+            typeof nombre !== 'string' || !nombre.trim() ||
+            typeof marca !== 'string' || !marca.trim() ||
+            typeof tipo !== 'string' || !tipo.trim() ||
+            !Number.isInteger(stock) || stock < 0
         ) {
             return res.status(400).json({
-                mensaje: 'Los datos del producto no son válidos.'
+                mensaje: 'Todos los campos son obligatorios y el stock debe ser un entero no negativo.'
             });
         }
 
         const productos = await leerProductos();
 
         const duplicado = productos.some(
-            (producto) =>
+            producto =>
                 producto.nombre.toLowerCase() === nombre.trim().toLowerCase()
         );
 
@@ -76,7 +76,8 @@ app.post('/api/productos', async (req, res) => {
                 0
             ) + 1,
             nombre: nombre.trim(),
-            categoria: categoria.trim(),
+            marca: marca.trim(),
+            tipo: tipo.trim(),
             stock
         };
 
@@ -92,12 +93,14 @@ app.post('/api/productos', async (req, res) => {
     }
 });
 
+// Eliminar artículo
 app.delete('/api/productos/:id', async (req, res) => {
     try {
         const id = Number(req.params.id);
         const productos = await leerProductos();
+
         const actualizados = productos.filter(
-            (producto) => producto.id !== id
+            producto => producto.id !== id
         );
 
         if (actualizados.length === productos.length) {
@@ -112,6 +115,60 @@ app.delete('/api/productos/:id', async (req, res) => {
         console.error(error);
         res.status(500).json({
             mensaje: 'No se pudo eliminar el producto.'
+        });
+    }
+});
+
+// Descontar unidades del stock de un artículo
+app.patch('/api/productos/:id/descontar', async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const { cantidad } = req.body;
+
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({
+                mensaje: 'Identificador de producto inválido.'
+            });
+        }
+
+        if (!Number.isInteger(cantidad) || cantidad <= 0) {
+            return res.status(400).json({
+                mensaje: 'La cantidad a descontar debe ser un entero mayor que cero.'
+            });
+        }
+
+        const productos = await leerProductos();
+
+        const producto = productos.find(
+            item => item.id === id
+        );
+
+        if (!producto) {
+            return res.status(404).json({
+                mensaje: 'Producto no encontrado.'
+            });
+        }
+
+        if (cantidad > producto.stock) {
+            return res.status(400).json({
+                mensaje: `Stock insuficiente. Existencias actuales: ${producto.stock}.`
+            });
+        }
+
+        producto.stock -= cantidad;
+
+        await guardarProductos(productos);
+
+        res.json({
+            mensaje: 'Stock actualizado correctamente.',
+            producto
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            mensaje: 'No se pudo descontar el stock.'
         });
     }
 });

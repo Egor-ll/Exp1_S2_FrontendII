@@ -2,31 +2,50 @@
   {
     "id": 1,
     "nombre": "Arroz",
-    "categoria": "Abarrotes",
+    "marca": "Lider",
+    "tipo": "Abarrotes",
     "stock": 45
   },
   {
     "id": 2,
     "nombre": "Leche",
-    "categoria": "Lácteos",
+    "marca": "Soprole",
+    "tipo": "Lácteos",
     "stock": 28
   },
   {
     "id": 3,
     "nombre": "Pan",
-    "categoria": "Panadería",
+    "marca": "Lider",
+    "tipo": "Panadería",
     "stock": 12
   },
   {
     "id": 4,
     "nombre": "Aceite",
-    "categoria": "Abarrotes",
+    "marca": "Sol",
+    "tipo": "Abarrotes",
     "stock": 6
   },
   {
     "id": 5,
     "nombre": "Papa",
-    "categoria": "Frutas y verduras",
+    "marca": "Sin especificar",
+    "tipo": "Frutas y verduras",
     "stock": 5
+  },
+  {
+    "id": 6,
+    "nombre": "yoghurt",
+    "marca": "Soprole",
+    "tipo": "Lácteos",
+    "stock": 15
+  },
+  {
+    "id": 7,
+    "nombre": "Jugo Naranja",
+    "marca": "Live",
+    "tipo": "Bebidas",
+    "stock": 45
   }
 ]
